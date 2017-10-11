@@ -1,0 +1,65 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/style2.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <table class="tableEdit">
+        <tbody>
+            <tr>
+                <th>交往时间：</th>
+                <td title="交往时间"></td>
+                <th>交往地点：</th>
+                <td>
+                    <input title="交往地点" type="text" />
+                </td>
+            </tr>
+            <tr>
+                <th>概要：</th>
+                <td><input title="概要" type="text" /></td>
+                <th>备注：</th>
+                <td><input title="备注" type="text" /></td>
+            </tr>
+            <tr>
+                <th>详细描述：</th>
+                <td colspan="3"><textarea></textarea></td>
+            </tr>
+        </tbody>
+    </table>
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            checkIsLogin();
+            var ActID = getQueryString("id");
+            if (ActID == null) {
+                var date = new Date();
+                var yy = date.getFullYear();
+                var M = date.getMonth() + 1;
+                var MM = ("00" + M).substr(("00" + M).length - 2, 2);
+                var d = date.getDate();
+                var dd = ("00" + d).substr(("00" + d).length - 2, 2);
+                $("td[title=交往时间]").text(yy + "-" + MM + "-" + dd);
+                return;
+            }
+            $.ajax({
+                type: "post",
+                url: "../services/Customer.asmx/FindActivity",
+                data: JSON.stringify({ id: ActID }),
+                contentType: "application/json",
+                dataType: "json",
+                success: function (r) {
+                    if (r.d) {
+                        $("td[title=交往时间]").text(convertToDate(r.d.ActDate, true));
+                        $("input[title=交往地点]").val(r.d.ActAdd);
+                        $("input[title=概要]").val(r.d.ActTitle);
+                        $("input[title=备注]").val(r.d.ActMemo);
+                        $("textarea").val(r.d.ActDesc);
+                    }
+                }
+            });
+        })
+    </script>
+</body>
+</html>

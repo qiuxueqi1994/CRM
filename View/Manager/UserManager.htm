@@ -1,0 +1,236 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/Style1.css" rel="stylesheet" type="text/css" />
+    <link href="../css/qxqpaging.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="desDiv">
+        <span>用户管理</span><br />
+        管理系统中所有的用户
+    </div>
+    <div id="dataDiv">
+        <div id="headDiv">
+            <img src="../images/22.gif" />&nbsp;&nbsp;<a href="javascript:void(0);">新建用户</a>
+        </div>
+        <table class="dataTable">
+            <thead>
+                <tr>
+                    <th width="20%">用户编号</th>
+                    <th width="20%">登陆名</th>
+                    <th width="20%">真实姓名</th>
+                    <th>所属角色</th>
+                    <th width="20%">操作</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div id="pageDiv"></div>
+    </div>
+
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../lib/layer/layer.js"></script>
+    <script src="../js/jquery.qxqpaging.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script>
+        $(function () {
+            checkIsLogin();
+            loadUsers();
+
+            // 添加
+            $("#headDiv a").click(function () {
+                parent.layer.open({
+                    type: 2,
+                    area: ['600px', '350px'],
+                    scrollbar: false,
+                    cache: false,
+                    title: ['添加用户', 'font-weight:700'],
+                    btn: ["确定添加", "取消"],
+                    content: [getUrlHeader() + 'Manager/EditUser.htm', 'auto'],
+                    yes: function (index, layero) {
+                        // 获取对象参数
+                        var body = parent.layer.getChildFrame('body', index);
+                        var txts = body.find("input");
+                        // 判断非空
+                        for (var i = 0; i < txts.length ; i++) {
+                            if ($.trim($(txts[i]).val()).length == 0) {
+                                parent.layer.msg("请完整填写所有信息！", { time: 1000 });
+                                return;
+                            }
+                        }
+                        // 判断密码
+                        var pwd1 = body.find("input[title=密码]").val();
+                        var pwd2 = body.find("input[title=确认密码]").val();
+                        if (pwd1 != pwd2) {
+                            parent.layer.msg("两次密码输入不一致！", { time: 1000 });
+                            body.find("input[title=确认密码]").select();
+                            return;
+                        }
+                        // 获得数据
+                        var data = {
+                            RoleID: body.find("#sel_roletype").val(),
+                            UserLName: body.find("input[title=登陆名]").val(),
+                            UserLPWD: pwd2,
+                            UserName: body.find("input[title=真实姓名]").val(),
+                            UserCode: body.find("input[title=姓名简称]").val()
+                        };
+                        // 开始添加
+                        $.ajax({
+                            type: "post",
+                            url: "../services/Manager.asmx/AddUser",
+                            data: JSON.stringify({ u: data }),
+                            contentType: "application/json",
+                            dataType: "json",
+                            cache: false,
+                            success: function (r) {
+                                if (r.d > 0) {
+                                    parent.layer.msg("添加成功!", { time: 1000 });
+                                    parent.layer.close(index);
+                                    loadUsers();
+                                } else {
+                                    parent.layer.msg("服务器繁忙，请稍后再试!", { time: 1000 });
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+        });
+
+        function loadUsers(nowPageIndex) {
+            $("#pageDiv").qxqpaging({
+                url: "../services/Manager.asmx/LoadUsersPaging",
+                pageIndex: nowPageIndex || 1,
+                pageSize: 5,
+                success: function (data) {
+                    if (data == null) {
+                        location.href = getUrlHeader() + "404.html";
+                        return;
+                    }
+                    // 当最后一页的最后一条数据被删除时，跳转到前一页
+                    if (data.length == 0 && this.pageIndex > 1) {
+                        loadUsers(this.pageIndex - 1);
+                        return;
+                    }
+                    // 保存当前页码，操作完成后继续跳转到此页
+                    var nowPageIndex = this.pageIndex;
+                    // 显示数据
+                    $("#dataDiv .dataTable tbody").empty();
+                    $.each(data, function (i, item) {
+                        var tr = $("<tr/>").appendTo("#dataDiv .dataTable tbody");
+                        $("<td/>").appendTo(tr).text(item.UserID);
+                        $("<td/>").appendTo(tr).text(item.UserLName);
+                        $("<td/>").appendTo(tr).text(item.UserName);
+                        $("<td/>").appendTo(tr).text(item.RoleName);
+                        var caozuo = $("<td/>").appendTo(tr);
+                        // 修改
+                        $('<img title="修改" src="../images/edt.gif" />').appendTo(caozuo)
+                            .click(function () {
+                                parent.layer.open({
+                                    type: 2,
+                                    area: ['600px', '350px'],
+                                    scrollbar: false,
+                                    cache: false,
+                                    title: ['修改用户', 'font-weight:700'],
+                                    btn: ["确定修改", "取消"],
+                                    content: [getUrlHeader() + 'Manager/EditUser.htm?id=' + item.RoleID, 'auto'],
+                                    success: function (layero, index) {
+                                        var body = parent.layer.getChildFrame('body', index);
+                                        body.find("input[title=登陆名]").val(item.UserLName);
+                                        body.find("input[title=真实姓名]").val(item.UserName);
+                                        body.find("input[title=姓名简称]").val(item.UserCode);
+                                        body.find("input[title=密码]").prop("placeholder", "不填写密码将保持原密码");
+                                        body.find("input[title=确认密码]").prop("placeholder", "如需更改密码请准确填写两次");
+                                    },
+                                    yes: function (index, layero) {
+                                        // 获取对象参数
+                                        var body = parent.layer.getChildFrame('body', index);
+                                        var txts = body.find(":text");
+                                        // 判断非空
+                                        for (var i = 0; i < txts.length ; i++) {
+                                            if ($.trim($(txts[i]).val()).length == 0) {
+                                                parent.layer.msg("请完整填写所有信息！", { time: 1000 });
+                                                return;
+                                            }
+                                        }
+                                        // 判断密码
+                                        var pwd1 = body.find("input[title=密码]").val();
+                                        var pwd2 = body.find("input[title=确认密码]").val();
+                                        if ($.trim(pwd1) != $.trim(pwd2)) {
+                                            parent.layer.msg("两次密码输入不一致！", { time: 1000 });
+                                            body.find("input[title=确认密码]").select();
+                                            return;
+                                        }
+                                        // 获得数据
+                                        var data = {
+                                            UserID: item.UserID,
+                                            RoleID: body.find("#sel_roletype").val(),
+                                            UserLName: body.find("input[title=登陆名]").val(),
+                                            UserLPWD: $.trim(pwd2),
+                                            UserName: body.find("input[title=真实姓名]").val(),
+                                            UserCode: body.find("input[title=姓名简称]").val()
+                                        };
+                                        // 开始修改
+                                        $.ajax({
+                                            type: "post",
+                                            url: "../services/Manager.asmx/UpdateUser",
+                                            data: JSON.stringify({ u: data }),
+                                            contentType: "application/json",
+                                            dataType: "json",
+                                            cache: false,
+                                            success: function (r) {
+                                                if (r.d > 0) {
+                                                    parent.layer.msg("修改成功!", { time: 1000 });
+                                                    loadUsers(nowPageIndex);
+                                                    parent.layer.close(index);
+                                                } else {
+                                                    parent.layer.msg("服务器繁忙，请稍后再试!", { time: 1000 });
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            });
+                        $("<span/>").appendTo(caozuo).html("&nbsp;&nbsp;");
+                        // 删除
+                        $('<img title="删除" src="../images/del.gif" />').appendTo(caozuo)
+                            .click(function () {
+                                parent.layer.confirm('确定删除用户' + item.UserName + '吗？', {
+                                    icon: 3,
+                                    btnAlign: 'c',
+                                    shadeClose: true,
+                                    yes: function (index) {
+                                        $.ajax({
+                                            type: "post",
+                                            url: "../services/Manager.asmx/RemoveUser",
+                                            data: JSON.stringify({ "uid": item.UserID }),
+                                            contentType: "application/json",
+                                            dataType: "json",
+                                            cache: false,
+                                            success: function (r) {
+                                                if (r.d == -2) {
+                                                    parent.layer.close(index);
+                                                    layer.msg('不可以删除自己！', { time: 1000 });
+                                                    return;
+                                                }
+
+                                                if (r.d > 0) {    // 删除成功
+                                                    layer.msg('删除成功！', { time: 1000 });
+                                                    loadUsers(nowPageIndex);
+                                                    parent.layer.close(index);
+                                                } else {
+                                                    layer.msg('服务器繁忙，请稍后重试！', { time: 1000 });
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            });
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

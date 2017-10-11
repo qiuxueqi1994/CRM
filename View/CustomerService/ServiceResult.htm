@@ -1,0 +1,129 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/Style1.css" rel="stylesheet" type="text/css" />
+    <link href="../css/qxqpaging.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="desDiv">
+        <span>服务反馈</span><br />
+        对于客户提出的咨询、建议、投诉等服务进行处理完毕后，记录客户对服务的结果的满意度等
+    </div>
+    <div id="dataDiv">
+        <div id="headDiv">
+        </div>
+        <table class="dataTable">
+            <thead>
+                <tr>
+                    <th width="12%">客户名称</th>
+                    <th >概要</th>
+                    <th width="10%">服务类型</th>
+                    <th width="20%">创建时间</th>
+                    <th width="10%">分配人</th>
+                    <th width="20%">分配时间</th>
+                    <th width="10%">处理</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>睿智数码</td>
+                    <td>询问收音机订单运费承担方式</td>
+                    <td>咨询</td>
+                    <td>2011年5月1日</td>
+                    <td>张三</td>
+                    <td>2011年5月2日</td>
+                    <td><input type="image" src="../images/bt_feedback.gif" onclick="showDispose()" /></td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="pageDiv"></div>
+    </div>
+
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script src="../lib/layer/layer.js"></script>
+    <script src="../js/jquery.qxqpaging.js"></script>
+    <script>
+        $(function () {
+            checkIsLogin();
+            loadServiceResultData();
+        })
+
+        function loadServiceResultData(nowPageIndex) {
+            $("#pageDiv").qxqpaging({
+                url: "../services/CustomerService.asmx/LoadServiceResultPaging",
+                pageIndex: nowPageIndex || 1,
+                pageSize: 5,
+                success: function (data) {
+                    if (data == null) {
+                        location.href = getUrlHeader() + "404.html";
+                        return;
+                    }
+                    // 保存当前页码，操作完成后继续跳转到此页
+                    var nowPageIndex = this.pageIndex;
+                    // 查询，显示结果
+                    // 删除原有数据
+                    $("#dataDiv > .dataTable tbody tr").remove();
+                    $.each(data, function (index, item) {
+                        //创建行
+                        var tr = $("<tr/>").appendTo("#dataDiv > .dataTable tbody").data("CSID", item.CSID);
+                        //创建单元格
+                        $('<td/>').appendTo(tr).text(item.CusName || "");
+                        $('<td/>').appendTo(tr).text(item.CSTitle || "").css("text-align", "left");
+                        $('<td/>').appendTo(tr).text(item.STName || "");
+                        $('<td/>').appendTo(tr).text(convertToDate(item.CSCreateDate));
+                        $('<td/>').appendTo(tr).text(item.CSDueMan || "");
+                        $('<td/>').appendTo(tr).text(convertToDate(item.CSDueDate));
+                        var td7 = $('<td/>').appendTo(tr);
+                        // 文本框
+                        var caozuo = $('<input type="image" src="../images/bt_feedback.gif" />').appendTo(td7);
+        
+                        caozuo.click(function () {
+                            parent.layer.open({
+                                type: 2,
+                                area: ['650px', '550px'],
+                                scrollbar: false,
+                                cache: false,
+                                title: ['服务处理', 'font-weight:700'],
+                                btn: ["确定", "取消"],
+                                content: [getUrlHeader() + 'CustomerService/ServiceResultDialog.htm?id=' + item.CSID, 'auto'],
+                                yes: function (index, layero) {
+                                    var body = parent.layer.getChildFrame('body', index);
+                                    var data = {
+                                        csResult: body.find("#txt_csResult").val(),
+                                        csSatisfy: body.find("#td_csSatisfy span.selected").length,
+                                        csID: item.CSID
+                                    };
+                                    if ($.trim(data.csResult).length == 0) {
+                                        parent.layer.msg("请填写处理结果！", { time: 1000 });
+                                        body.find("#txt_csResult").focus();
+                                        return;
+                                    }
+                                    $.ajax({
+                                        type: "post",
+                                        url: "../services/CustomerService.asmx/SaveCSResult",
+                                        data: JSON.stringify(data),
+                                        contentType: "application/json",
+                                        dataType: "json",
+                                        success: function (r) {
+                                            if (r.d > 0) {
+                                                parent.layer.msg("操作成功！", { time: 1000 });
+                                                parent.layer.close(index);
+                                                loadServiceResultData(nowPageIndex);
+                                            } else {
+                                                parent.layer.msg("服务器繁忙，请稍后再试！", { time: 1000 });
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        });
+                        
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

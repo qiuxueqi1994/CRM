@@ -1,0 +1,235 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/style3.css" rel="stylesheet" type="text/css" />
+    <style type="text/css">
+        .tableEdit th, .tableEdit td {
+            width: 350px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 标题和工具栏 -->
+    <table class="tableEdit" style="width:700px;">
+        <thead>
+            <tr>
+                <td><a href="#new" onclick="showNew();">新建</a>&nbsp;&nbsp;<a href="javascript:void(0);" onclick="showSuccess();">开发成功</a>&nbsp;&nbsp;<a href="#fail" onclick="showFail();">开发终止</a></td>
+            </tr>
+        </thead>
+    </table>
+
+    <!-- 开发计划列表 -->
+    <table id="editData" class="tableEdit" style="width:700px;">
+        <tbody></tbody>
+    </table>
+
+    <!-- 操作面板：输入新计划 -->
+    <table class="tableEdit tb_new" style="width:700px;display:none;">
+        <tr>
+            <th>新建计划： <a href="javascript:void(0);" onclick="saveNew();">保存</a><br /></th>
+            <td><textarea id="new" placeholder="请在这里输入新计划..."></textarea></td>
+        </tr>
+    </table>
+
+    <!-- 操作面板：输入执行结果 -->
+    <table class="tableEdit tb_enter" style="width:700px;display:none;">
+        <tr>
+            <th>执行结果： <a href="javascript:void(0);" onclick="saveEnter();">保存</a><br /></th>
+            <td><textarea id="enter" placeholder="请在这里输入执行结果..."></textarea></td>
+        </tr>
+    </table>
+
+    <!-- 操作面板：输入失败原因 -->
+    <table class="tableEdit tb_fail" style="width:700px;display:none;">
+        <tr>
+            <th>失败原因： <a href="javascript:void(0);" onclick="saveFail();">保存</a><br /></th>
+            <td><textarea id="fail" placeholder="请在这里输入失败原因..."></textarea></td>
+        </tr>
+    </table>
+
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../lib/layer/layer.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script type="text/javascript">
+        var chanID;
+        $(function () {
+            checkIsLogin();
+            chanID = getQueryString('id');
+            if (chanID == null) return;
+            loadSaleOpenData();
+        });
+
+        function loadSaleOpenData() {
+            $.ajax({
+                type: "post",
+                url: getUrlHeader() + "services/Sale.asmx/LoadPlansByChanID",
+                cache: false,
+                data: JSON.stringify({ "chanID": chanID }),
+                contentType: "application/json",
+                dataType: "json",
+                cache: false,
+                success: function (r) {
+                    if (r.d == null) {
+                        location.href = getUrlHeader() + "404.html";
+                        return;
+                    }
+
+                    // 查询，显示结果
+                    // 删除原有数据
+                    $("#editData tbody tr").remove();
+                    $.each(r.d, function (index, item) {
+                        //创建行
+                        var tr1 = $("<tr/>").appendTo("#editData tbody");
+                        var tr2 = $("<tr/>").appendTo("#editData tbody");
+                        //创建单元格
+                        $('<th/>').appendTo(tr1).text("计划： " + convertToDate(item.PlanDate) || "");
+                        $('<th/>').appendTo(tr1).text("执行： " + convertToDate(item.PlanResultDate) || "");
+                        $('<td/>').appendTo(tr2).text(item.PlanContent || "");
+                        $('<td/>').appendTo(tr2).html(item.PlanResult || '<a href="#enter" onclick="showEnter(' + item.PlanID + ');">输入执行结果</a>');
+                    });
+                }
+            });
+        }
+
+        //显示新建
+        function showNew() {
+            $(".tb_fail, .tb_enter").hide();
+            $(".tb_new").toggle();
+            $('table.tb_new textarea').focus();
+        }
+        //保存新建计划
+        function saveNew() {
+            var txt = $('#new');
+            if (txt.val().trim().length == 0) {
+                layer.msg('请填写计划内容！', { time: 1000 });
+                txt.focus();
+                return;
+            }
+            $.ajax({
+                type: "post",
+                url: getUrlHeader() + "services/Sale.asmx/InsertPlanContent",
+                cache: false,
+                data: JSON.stringify({ "chanID": chanID, "planContent": txt.val() }),
+                contentType: "application/json",
+                dataType: "json",
+                cache: false,
+                success: function (r) {
+                    if (r.d > 0) {
+                        layer.msg('添加成功！', { time: 1000 });
+                        txt.val("");
+                        //刷新计划列表...
+                        loadSaleOpenData();
+                    }
+                    else {
+                        layer.msg('服务器繁忙，请稍后再试！', { time: 1000 });
+                    }
+                    $(".tb_new").hide();
+                }
+            });
+        }
+
+        //显示执行结果
+        function showEnter(PlanID) {
+            $(".tb_new, .tb_fail").hide();
+            $(".tb_enter").toggle().data("PlanID", PlanID);
+        }
+        //保存执行结果
+        function saveEnter(PlanID) {
+            var planID = $(".tb_enter").data("PlanID");
+            var txt = $('#enter');
+            if (txt.val().trim().length == 0) {
+                layer.msg('请填写执行内容！', { time: 1000 });
+                txt.focus();
+                return;
+            }
+            $.ajax({
+                type: "post",
+                url: getUrlHeader() + "services/Sale.asmx/UpdatePlan",
+                cache: false,
+                data: JSON.stringify({ "planID": planID, "planResult": txt.val() }),
+                contentType: "application/json",
+                dataType: "json",
+                cache: false,
+                success: function (r) {
+                    if (r.d > 0) {
+                        layer.msg('添加成功！', { time: 1000 });
+                        txt.val("");
+                        //刷新计划列表...
+                        loadSaleOpenData();
+                    }
+                    else {
+                        layer.msg('服务器繁忙，请稍后再试！', { time: 1000 });
+                    }
+                    $(".tb_enter").hide();
+                }
+            });
+        }
+
+        //开发成功
+        function showSuccess() {
+            layer.confirm('开发成功后，系统会记录该项目的客户资料，确认已开发成功吗？', {
+                icon: 3,
+                btnAlign: 'c',
+                shadeClose: true,
+                yes: function (index) {
+                    $.ajax({
+                        type: "post",
+                        url: getUrlHeader() + "services/Sale.asmx/UpdateChanState",
+                        cache: false,
+                        data: JSON.stringify({ "chanID": chanID, "chanState": 3, "chanError": null }),
+                        contentType: "application/json",
+                        dataType: "json",
+                        cache: false,
+                        success: function (r) {
+                            if (r.d > 0)
+                                parent.layer.msg('操作成功！', { time: 1000 });
+                            else
+                                parent.layer.msg('服务器繁忙，请稍后再试！', { time: 1000 });
+                            parent.layer.closeAll('iframe');
+                        }
+                    });
+                }
+            });
+        }
+
+        //显示开发失败
+        function showFail() {
+            $(".tb_new, .tb_enter").hide();
+            $(".tb_fail").toggle();
+        }
+        //保存开发失败
+        function saveFail() {
+            var txt = $("#fail");
+            if (txt.val().trim().length == 0) {
+                layer.msg('请填写执行内容！', { time: 1000 });
+                txt.focus();
+                return;
+            }
+            layer.confirm('确认要终止开发吗？', {
+                icon: 3,
+                btnAlign: 'c',
+                shadeClose: true,
+                yes: function (index) {
+                    $.ajax({
+                        type: "post",
+                        url: getUrlHeader() + "services/Sale.asmx/UpdateChanState",
+                        cache: false,
+                        data: JSON.stringify({ "chanID": chanID, "chanState": 4, "chanError": txt.val() }),
+                        contentType: "application/json",
+                        dataType: "json",
+                        cache: false,
+                        success: function (r) {
+                            if (r.d > 0)
+                                parent.layer.msg('操作成功！', { time: 1000 });
+                            else
+                                parent.layer.msg('服务器繁忙，请稍后再试！', { time: 1000 });
+                            parent.layer.closeAll('iframe');
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

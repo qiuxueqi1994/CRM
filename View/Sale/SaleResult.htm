@@ -1,0 +1,50 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/style3.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <table id="editData" class="tableEdit">
+        <tbody></tbody>
+    </table>
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script>
+        $(function () {
+            checkIsLogin();
+            var chanID = getQueryString('id');
+            var err = getQueryString('err');
+            if (chanID == null) return;
+            $.ajax({
+                type: "post",
+                url: getUrlHeader() + "services/Sale.asmx/LoadPlansByChanID",
+                cache: false,
+                data: JSON.stringify({ "chanID": chanID }),
+                contentType: "application/json",
+                dataType: "json",
+                cache: false,
+                success: function (r) {
+                    // 查询，显示结果
+                    // 删除原有数据
+                    $("#editData tbody tr").remove();
+                    if (err) {
+                        var tr = $("<tr/>").appendTo("#editData tbody");
+                        $('<th colspan="2"/>').appendTo(tr).html('失败原因： <br />' + err);
+                    }
+                    $.each(r.d, function (index, item) {
+                        //创建行
+                        var tr1 = $("<tr/>").appendTo("#editData tbody");
+                        var tr2 = $("<tr/>").appendTo("#editData tbody");
+                        //创建单元格
+                        $('<th/>').appendTo(tr1).text("计划： " + convertToDate(item.PlanDate) || "");
+                        $('<th/>').appendTo(tr1).text("执行： " + convertToDate(item.PlanResultDate) || "");
+                        $('<td/>').appendTo(tr2).text(item.PlanContent || "");
+                        $('<td/>').appendTo(tr2).text(item.PlanResult || "");
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

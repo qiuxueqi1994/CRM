@@ -1,0 +1,35 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <link href="css/H-ui.css" rel="stylesheet" />
+    <link href="css/H-ui.admin.css" rel="stylesheet" />
+    <link href="css/my-style.css" rel="stylesheet" />
+    <script src="js/jquery-1.10.2.min.js"></script>
+    <script src="lib/zzsc.js"></script>
+    <style>
+        #zzsc{width:920px;margin:0px auto;}
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <h1 class="f-20" style="padding-top:0;">欢迎进入CRM客户关系管理系统！</h1>
+    </div>
+    <div id="zzsc"></div>
+    <footer class="myfooter" style="position:absolute; bottom:0; left:0; width:100%; padding:5px 0; height: 50px;">
+        <span class="f-l lh-30 mt-10 mb-10 ml-20">今天是 : &nbsp;</span>
+        <span id="nowdatetime" class="f-l lh-30 mt-10 mb-10"></span>
+    </footer>
+    <script>
+        getDateTimeNow();
+        setInterval("getDateTimeNow()", 1000);
+        function getDateTimeNow() {
+            var d = new Date();
+            var day = d.getDay();
+            var week = day == 0 ? "星期日" : (day == 1 ? "星期一" : (day == 2 ? "星期二" : (day == 3 ? "星期三" : day == 4 ? "星期四" : (day == 5 ? "星期五" : "星期六"))));
+            var today = d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日　"  + week;
+            document.getElementById('nowdatetime').innerText = today;
+        }
+    </script>
+</body>
+</html>

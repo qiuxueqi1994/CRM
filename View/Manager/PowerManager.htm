@@ -1,0 +1,148 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/Style1.css" rel="stylesheet" type="text/css" />
+    <link href="../css/qxqpaging.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <div id="desDiv">
+        <span>权限管理</span><br />
+        管理系统中所有角色的权限
+    </div>
+    <div id="dataDiv">
+        <table class="dataTable">
+            <thead>
+                <tr>
+                    <th>角色编号</th>
+                    <th>角色名</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div id="pageDiv"></div>
+    </div>
+
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../lib/layer/layer.js"></script>
+    <script src="../js/jquery.qxqpaging.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script>
+        $(function () {
+            checkIsLogin();
+            loadRoles();
+        })
+
+        function loadRoles(nowPageIndex) {
+            $("#pageDiv").qxqpaging({
+                url: "../services/Manager.asmx/LoadRolePaging",
+                pageIndex: nowPageIndex || 1,
+                pageSize: 5,
+                success: function (data) {
+                    if (data == null) {
+                        location.href = getUrlHeader() + "404.html";
+                        return;
+                    }
+                    // 当最后一页的最后一条数据被删除时，跳转到前一页
+                    if (data.length == 0 && this.pageIndex > 1) {
+                        loadRoles(this.pageIndex - 1);
+                        return;
+                    }
+                    // 保存当前页码，操作完成后继续跳转到此页
+                    var nowPageIndex = this.pageIndex;
+                    // 显示数据
+                    $("#dataDiv .dataTable tbody").empty();
+                    $.each(data, function (i, item) {
+                        var tr = $("<tr/>").appendTo("#dataDiv .dataTable tbody");
+                        $("<td/>").appendTo(tr).text(item.ID);
+                        $("<td/>").appendTo(tr).text(item.RoleName);
+                        var caozuo = $("<td/>").appendTo(tr);
+                        // 设置权限
+                        $('<a href="javascript:void(0);"/>').appendTo(caozuo).text("设置权限")
+                            .click(function () {
+                                parent.layer.open({
+                                    type: 2,
+                                    area: ['600px', '420px'],
+                                    scrollbar: false,
+                                    cache: false,
+                                    title: ['设置角色【' + item.RoleName + '】的权限', 'font-weight:700'],
+                                    btn: ["确定修改", "取消"],
+                                    content: [getUrlHeader() + 'Manager/EditRolePower.htm', 'auto'],
+                                    success: function (layero, index) {
+                                        var body = parent.layer.getChildFrame('body', index);
+                                        $.ajax({
+                                            type: "post",
+                                            url: "../services/Manager.asmx/LoadPowers",
+                                            data: JSON.stringify({ RoleID: item.ID }),
+                                            dataType: "json",
+                                            cache: false,
+                                            contentType: "application/json",
+                                            success: function (r) {
+                                                var table = body.find("#table-powerEdit tbody");
+                                                table.empty(); //清除tbody里面的内容
+                                                //循环显示一级菜单
+                                                $.each(r.d, function (i, root) {
+                                                    //添加一行
+                                                    var tr = $("<tr/>").appendTo(table);
+                                                    //显示一级菜单的名字
+                                                    $("<th/>").appendTo(tr).html(root.MenuName);
+                                                    //用于显示二级菜单的容器
+                                                    var td = $('<td colspan="3"/>').appendTo(tr);
+                                                    //循环显示二级菜单
+                                                    $.each(root.SubMenus, function (j, menu) {
+                                                        //添加子项菜单
+                                                        var label = $("<label/>").appendTo(td);
+                                                        //添加复选框
+                                                        $('<input type="checkbox"/>').appendTo(label)
+                                                            .val(menu.ID).data("pid", menu.ParentID)
+                                                            .prop("checked", menu.Checked);
+                                                        //复选框文字
+                                                        label.append(menu.MenuName);
+                                                        //添加换行
+                                                        $("<br/>").appendTo(td);
+                                                    });
+                                                });
+                                            }
+                                        });
+                                    },
+                                    yes: function (index, layero) {
+                                        var body = parent.layer.getChildFrame('body', index);
+                                        //得到选中的复选框值
+                                        var arr = [];
+                                        body.find(":checked").each(function (i, chk) {
+                                            var c = $(chk);
+                                            arr.push(c.val());
+                                            arr.push(c.data("pid"));
+                                        });
+                                        $.unique(arr);
+
+                                        //提交角色的权限
+                                        $.ajax({
+                                            type: "post",
+                                            url: "../services/Manager.asmx/UpdatePowers",
+                                            data: JSON.stringify({ RoleID: item.ID, Powers: arr }),
+                                            dataType: "json",
+                                            cache: false,
+                                            contentType: "application/json",
+                                            success: function (r) {
+                                                if (r.d) {
+                                                    //更新成功
+                                                    layer.msg("操作成功！", { time: 1000 });
+                                                    parent.layer.close(index);
+                                                } else {
+                                                    //更新失败
+                                                    layer.msg("服务器忙，请稍后重试！", { time: 1000 });
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            });
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

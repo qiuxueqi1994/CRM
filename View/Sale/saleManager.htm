@@ -1,0 +1,104 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/Style1.css" rel="stylesheet" type="text/css" />
+    <link href="../css/qxqpaging.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="desDiv">
+        <span>客户开发计划</span><br />
+        制定客户开发计划和记录开发进度
+    </div>
+    <div id="dataDiv">
+        <div id="headDiv"></div>
+        <table class="dataTable">
+            <tr>
+                <th width="15%">客户名称</th>
+                <th>概要</th>
+                <th width="10%">联系人</th>
+                <th width="12%">联系电话</th>
+                <th width="15%">创建时间</th>
+                <th width="10%">状态</th>
+                <th width="10%">操作</th>
+            </tr>
+        </table>
+        <div id="pageDiv"> </div>
+    </div>
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script src="../lib/layer/layer.js"></script>
+    <script src="../js/jquery.qxqpaging.js"></script>
+    <script>
+        $(function () {
+            checkIsLogin();
+            loadSaleManagerData();
+        });
+
+        function loadSaleManagerData(nowPageIndex) {
+            $("#pageDiv").qxqpaging({
+                url: "../services/Sale.asmx/LoadSaleManagerPading",
+                pageIndex: nowPageIndex || 1,
+                pageSize: 5,
+                success: function (data) {
+                    if (data == null) {
+                        location.href = getUrlHeader() + "404.html";
+                        return;
+                    }
+
+                    // 保存当前页码，操作完成后继续跳转到此页
+                    var nowPageIndex = this.pageIndex;
+                    // 查询，显示结果
+                    // 删除原有数据
+                    $("#dataDiv > .dataTable tbody tr:gt(0)").remove();
+                    $.each(data, function (index, item) {
+                        //创建行
+                        var tr = $("<tr/>").appendTo("#dataDiv > .dataTable tbody").data("chanID", item.ChanID);
+                        //创建单元格
+                        $('<td/>').appendTo(tr).text(item.ChanName || "");
+                        $('<td/>').appendTo(tr).text(item.ChanTitle || "").css("text-align", "left");
+                        $('<td/>').appendTo(tr).text(item.ChanLinkMan || "");
+                        $('<td/>').appendTo(tr).text(item.ChanLinkTel || "");
+                        $('<td/>').appendTo(tr).text(convertToDate(item.ChanCreateDate));
+                        var state = item.ChanState;
+                        var statetxt = state == 2 ? "开发中" : (state == 3 ? "开发成功" : "开发失败");
+                        $('<td/>').appendTo(tr).text(statetxt);
+                        var td7 = $('<td/>').appendTo(tr);
+                        if (state == 2) {
+                            $('<img title="修改" src="../images/bt_feedback.gif" />').appendTo(td7).click(function () {
+                                parent.layer.open({
+                                    type: 2,
+                                    area: ['800px', '400px'],
+                                    scrollbar: false,
+                                    cache: false,
+                                    shadeClose: true,
+                                    title: ['开发计划查看（状态：' + statetxt + '）', 'font-weight:700'],
+                                    content: [getUrlHeader() + 'Sale/SaleOpen.htm?id=' + item.ChanID, 'auto'],
+                                    end: function () { loadSaleManagerData(nowPageIndex); }
+                                });
+                            });
+                        }
+                        else {
+                            var look = $('<img title="查看" src="../images/bt_detail.gif" />').appendTo(td7).click(function () {
+                                var serch = "";
+                                if (state == 4) serch = "&err=" + window.encodeURIComponent(item.ChanError);
+                                parent.layer.open({
+                                    type: 2,
+                                    area: ['800px', '400px'],
+                                    scrollbar: false,
+                                    cache: false,
+                                    shadeClose: true,
+                                    title: ['开发计划查看（状态：' + statetxt + '）', 'font-weight:700'],
+                                    content: [getUrlHeader() + 'Sale/SaleResult.htm?id=' + item.ChanID + serch, 'auto'],
+                                    end: function () { loadSaleManagerData(nowPageIndex); }
+                                });
+                            });
+
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

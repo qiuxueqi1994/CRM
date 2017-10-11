@@ -1,0 +1,150 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/Style2.css" rel="stylesheet" type="text/css" />
+    <link href="../CSS/Style1.css" rel="stylesheet" type="text/css" />
+    <link href="../css/qxqpaging.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <div id="desDiv">
+        <span>服务归档</span><br />
+        已处理完成的客户服务历史记录查看
+    </div>
+    <table class="tableEdit" style="width:600px">
+        <tr>
+            <th>
+                客户名称：
+            </th>
+            <td>
+                <input type="text" id="txt_CusName"/>
+            </td>
+            <th>
+                服务类型：
+            </th>
+            <td>
+                <select id="serviceType" style="width:80px">
+                    <option value="">全部</option>
+                </select>
+            </td>
+        </tr>
+        <tfoot>
+            <tr>
+                <td colspan="8">
+                    <input type="button" value="查询" onclick="LoadServiceDetailData();"/>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+    <div id="dataDiv">
+        <div id="headDiv">
+        </div>
+        <table class="dataTable">
+            <thead>
+                <tr>
+                    <th width="12%">客户名称</th>
+                    <th >概要</th>
+                    <th width="10%">服务类型</th>
+                    <th width="15%">创建时间</th>
+                    <th width="10%">创建人</th>
+                    <th width="15%">分配时间</th>
+                    <th width="10%">处理人</th>
+                    <th width="8%">查看</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>睿智数码</td>
+                    <td>询问收音机订单运费承担方式</td>
+                    <td>咨询</td>
+                    <td>2011年5月1日</td>
+                    <td>张三</td>
+                    <td>2011年5月2日</td>
+                    <td>张三</td>
+                    <td><input type="image" src="../images/bt_detail.gif" onclick="showDetail()" /></td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="pageDiv"></div>
+    </div>
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script src="../lib/layer/layer.js"></script>
+    <script src="../js/jquery.qxqpaging.js"></script>
+    <script>
+        $(function () {
+            checkIsLogin();
+            LoadServiceType();
+            LoadServiceDetailData();
+        });
+
+        function LoadServiceDetailData(nowPageIndex){
+            $("#pageDiv").qxqpaging({
+                url: "../services/CustomerService.asmx/LoadServiceDetailPaging",
+                pageIndex: nowPageIndex || 1,
+                data: {
+                    cusName: $("#txt_CusName").val(),
+                    STID: $("#serviceType").val()
+                },
+                pageSize: 5,
+                success: function (data) {
+                    if (data == null) {
+                        location.href = getUrlHeader() + "404.html";
+                        return;
+                    }
+                    // 保存当前页码，操作完成后继续跳转到此页
+                    var nowPageIndex = this.pageIndex;
+                    // 查询，显示结果
+                    // 删除原有数据
+                    $("#dataDiv > .dataTable tbody tr").remove();
+                    $.each(data, function (index, item) {
+                        //创建行
+                        var tr = $("<tr/>").appendTo("#dataDiv > .dataTable tbody").data("CSID", item.CSID);
+                        //创建单元格
+                        $('<td/>').appendTo(tr).text(item.CusName || "");
+                        $('<td/>').appendTo(tr).text(item.CSTitle || "").css("text-align", "left");
+                        $('<td/>').appendTo(tr).text(item.STName || "");
+                        $('<td/>').appendTo(tr).text(convertToDate(item.CSCreateDate));
+                        $('<td/>').appendTo(tr).text(item.CSCreateMan || "");
+                        $('<td/>').appendTo(tr).text(convertToDate(item.CSDueDate));
+                        $('<td/>').appendTo(tr).text(item.CSDueMan || "");
+                        var td7 = $('<td/>').appendTo(tr);
+                        // 文本框
+                        var caozuo = $('<input type="image" src="../images/bt_detail.gif"  />').appendTo(td7);
+
+                        caozuo.click(function () {
+                            parent.layer.open({
+                                type: 2,
+                                area: ['650px', '500px'],
+                                scrollbar: false,
+                                cache: false,
+                                shadeClose: true,
+                                title: ['服务信息查看', 'font-weight:700'],
+                                content: [getUrlHeader() + 'CustomerService/ServiceDetailDialog.htm?id=' + item.CSID, 'auto'],
+                            });
+                        });
+
+                    });
+                }
+            });
+        }
+
+        // 加载下拉列表
+        function LoadServiceType() {
+            $.ajax({
+                type: "post",
+                url: "../services/CustomerService.asmx/LoadServiceType",
+                data: "{}",
+                contentType: "application/json",
+                dataType: "json",
+                success: function (r) {
+                    $("#serviceType option:gt(0)").remove();
+                    $.each(r.d, function (index, item) {
+                        $('<option />').appendTo($("#serviceType")).val(item.STID).text(item.STName);
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

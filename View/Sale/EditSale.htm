@@ -1,0 +1,73 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/style2.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <table class="tableEdit">
+        <tr>
+            <th>客户名称：</th>
+            <td>
+                <input title="客户名称" type="text" />
+            </td>
+            <th>成功几率：</th>
+            <td>
+                <select title="成功几率">
+                    <option value="100">100%</option>
+                    <option value="90">90%</option>
+                    <option value="80">80%</option>
+                    <option value="70">70%</option>
+                    <option value="60">60%</option>
+                    <option value="50">50%</option>
+                    <option value="40">40%</option>
+                    <option value="30">30%</option>
+                    <option value="20">20%</option>
+                    <option value="10">10%</option>
+                    <option value="0">0%</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th>联系人：</th>
+            <td><input title="联系人" type="text" /></td>
+            <th>联系电话：</th>
+            <td><input title="联系电话" type="text" /></td>
+        </tr>
+        <tr>
+            <th>概要：</th>
+            <td colspan="3"><input title="概要" type="text" style="width:300px" /></td>
+        </tr>
+        <tr>
+            <th>机会描述：</th>
+            <td colspan="3"><textarea title="机会描述"></textarea></td>
+        </tr>
+    </table>
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script>
+        $(function () {
+            checkIsLogin();
+            var chanID = getQueryString('id');
+            if (chanID == null) return;
+            $.ajax({
+                type: "post",
+                url: "../services/Sale.asmx/Find",
+                data: JSON.stringify({ "chanID": chanID }),
+                contentType: "application/json",
+                dataType: "json",
+                cache: false,
+                success: function (r) {
+                    if (r.d == null) return;
+                    $("input[title=客户名称]").val(r.d.ChanName);
+                    $("input[title=联系人]").val(r.d.ChanLinkMan);
+                    $("input[title=联系电话]").val(r.d.ChanLinkTel);
+                    $("input[title=概要]").val(r.d.ChanTitle);
+                    $("textarea").val(r.d.ChanDesc);
+                    $("select").val(r.d.ChanRate);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

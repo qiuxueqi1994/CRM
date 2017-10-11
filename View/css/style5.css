@@ -1,0 +1,56 @@
+﻿body
+{
+	font-size:14px;
+    padding: 0 12px;
+}
+a
+{
+	text-decoration:none;	
+}
+input[type='text']
+{
+	border:solid 1px black;	
+	width:80%;
+}
+textarea
+{
+	border:solid 1px black;	
+	width:300px;
+	height:100px;
+}
+.tableEdit
+{
+	border:solid 1px #ddd;	
+	border-collapse:collapse;
+	width:99%;	
+	margin:5px;
+}
+.tableEdit th
+{
+	text-align:center;
+	padding:5px 8px;	
+	border:solid 1px #ddd;	
+	width:100px;
+	background-color:#f4f4f4;
+    height: 28px;
+}
+
+.tableEdit tr:hover {
+    background-color:#c1c0c0;
+}
+
+.tableEdit td
+{
+	text-align:left;
+	padding:5px 8px;	
+	border:solid 1px #ddd;	
+    height: 26px;
+	/* cursor:pointer; */
+}
+.tableEdit thead
+{
+	border:solid 1px #ddd;
+	background-color:#C1EBFF;
+	padding:5px;
+	font-weight:bold;
+}

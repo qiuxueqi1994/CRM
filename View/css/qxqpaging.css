@@ -1,0 +1,41 @@
+﻿.qxqpaging-main {
+    width: 100%;
+    text-align: center;
+}
+
+    .qxqpaging-main > * {
+        display:inline-block;
+        padding: 10px 20px;
+    }
+
+    .qxqpaging-main > span{
+        color: #666;
+    }
+
+    .qxqpaging-main > span:hover{
+        cursor: pointer;
+        color: #ff6a00;
+    }
+    .qxqpaging-main > span.disabled{
+        color: #ddd;
+        cursor: default;
+    }
+
+@font-face {
+    font-family: "iconfont";
+    src: url('iconfont.ttf?t=1471945285') format('truetype'); /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/
+}
+
+.iconfont {
+    font-family: "iconfont" !important;
+    font-size: 16px;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-stroke-width: 0.2px;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-pagedown:before { content: "\e62d"; }
+.icon-pageup:before { content: "\e62e"; }
+.icon-pageend:before { content: "\e62f"; }
+.icon-pagehome:before { content: "\e630"; }

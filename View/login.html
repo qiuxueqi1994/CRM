@@ -1,0 +1,150 @@
+﻿<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="renderer" content="webkit|ie-comp|ie-stand" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+
+    <link rel="stylesheet" type="text/css" href="css/H-ui.css" />
+    <link rel="stylesheet" type="text/css" href="css/H-ui.admin.css" />
+    <link rel="stylesheet" type="text/css" href="skin/blue/skin.css" />
+    <link rel="stylesheet" type="text/css" href="fonts/iconfont.css" />
+    <link rel="stylesheet" type="text/css" href="css/animate.css" />
+    <link rel="stylesheet" type="text/css" href="css/my-style.css" />
+
+    <style>
+        body ::-webkit-input-placeholder {
+            color: white;
+        }
+
+        body :-moz-placeholder {
+            color: white;
+            opacity: 1;
+        }
+
+        body ::-moz-placeholder {
+            color: white;
+        }
+
+        body :-ms-input-placeholder {
+            color: white;
+        }
+    </style>
+    <script type="text/javascript">
+        //确保登录页面不作为框架页面显示，而是显示为独立的页面
+        if (window.top != window.self) {
+            window.top.location = "login.html";
+        }
+    </script>
+    <title>CRM客户关系管理系统--登录</title>
+</head>
+
+<body style="background:url(images/sharebg.png) no-repeat bottom fixed;  background-size:cover; height:auto;">
+    <div style=" position: absolute;top:0;left: 0;width: 100%;height:100%;overflow: hidden;">
+        <div style="width:370px; margin:120px auto 0 auto;padding:20px;overflow:hidden;">
+            <form id="loginForm" class="animated fadeInUpBig">
+                <div style="margin-bottom:30px;background: url('images/crm_logo.png') no-repeat 0px 6px;background-size:140px; height:60px;padding-left:144px;color:#fff;margin-top:26px;">
+                    <i style="font-size:20px;">CRM客户关系管理系统</i>
+                    <i style="display:block; font-size:12px;transform:scale(0.8) translateX(-25px);">COMPRNY INFORMATION SYSTEM</i>
+                </div>
+                <div style="width:230px;line-height:24px; background-color:#FFF; margin-left:90px; padding:10px; display:none;" class="c-warning">
+                    <i class="iconfont icon-tishi mr-5" style="font-size:14px;"></i>验证码不正确，请再次输入
+                </div>
+                <div style="overflow:hidden; padding:10px 0; clear:both;">
+                    <label class="f-l text-r lh-30 c-white" style="width:80px;">用户名：</label>
+                    <input type="text" class="input-text f-l ml-20" placeholder="请输入用户名" />
+                </div>
+                <div style="overflow:hidden; clear:both; padding:10px 0; ">
+                    <label class="f-l text-r lh-30 c-white" style="width:80px;">密码：</label>
+                    <input type="password" class="input-text f-l ml-20 " placeholder="请输入密码" />
+                </div>
+                <!--<h6 style="clear:both; margin-left:100px"><a class="c-white" href="find-password.html">忘记密码了？</a></h6>-->
+                <a id="crmloginlink" class="btn btn-primary btn-block mt-10 f-r" style="width:250px;margin-right:20px; background-color:#FFF; color:#4988bd; border:none;" href="javascript:void(0)">登&nbsp;&nbsp;&nbsp;&nbsp;录</a>
+            </form>
+        </div>
+        <ul class="bg-bubbles">
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+        </ul>
+    </div>
+    <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" src="js/H-ui.js"></script>
+    <script type="text/javascript" src="js/H-ui.admin.js"></script>
+    <script src="lib/layer/layer.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            $("#crmloginlink").click(function () {
+                var objname = $(":text");
+                var objpwd = $(":password");
+                var data = {
+                    name: objname.val(),
+                    pwd: objpwd.val()
+                };
+
+                if ($.trim(data.name).length == 0) {
+                    layer.tips('用户名不能为空', objname, { tips: 3 });
+                    objname.val("");
+                    objname.focus();
+                    return;
+                }
+                if ($.trim(data.pwd).length == 0) {
+                    layer.tips('密码不能为空', objpwd, { tips: 3 });
+                    objpwd.val("");
+                    objpwd.focus();
+                    return;
+                }
+                if (!isLoginNameTrue(objname.val())) {
+                    layer.tips('您输入的用户名不存在', ':text', { tips: 3 });
+                    objname.select();
+                    return;
+                }
+                $.ajax({
+                    type: "post",
+                    url: "services/Login.asmx/LoginTo",
+                    data: JSON.stringify(data),
+                    contentType: "application/json",
+                    dataType: "json",
+                    success: function (r) {
+                        if (r.d) {
+                            window.location.href = "index.html";
+                        } else {
+                            layer.tips('您输入的密码有误', objpwd, { tips: 3 });
+                            objpwd.select();
+                        }
+                    }
+                });
+            });
+
+            function isLoginNameTrue(name) {
+                if ($.trim(name).length == 0) return;
+                var result = null;
+                $.ajax({
+                    type: "post",
+                    url: "services/Login.asmx/IsLoginNameTrue",
+                    async: false,
+                    cache: false,
+                    data: JSON.stringify({ 'name': name }),
+                    contentType: "application/json",
+                    dataType: "json",
+                    success: function (r) {
+                        result = r.d;
+                    }
+                });
+
+                if (result == null) location.reload();
+                return result;
+            }
+        });
+    </script>
+</body>
+</html>

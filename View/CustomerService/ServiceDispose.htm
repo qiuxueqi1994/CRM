@@ -1,0 +1,124 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/Style1.css" rel="stylesheet" type="text/css" />
+    <link href="../css/qxqpaging.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div id="desDiv">
+        <span>服务处理</span><br />
+        对于客户提出的咨询、建议、投诉等服务进行处理，并记录下处理结果
+    </div>
+    <div id="dataDiv">
+        <div id="headDiv">
+        </div>
+        <table class="dataTable">
+            <thead>
+                <tr>
+                    <th>客户名称</th>
+                    <th>概要</th>
+                    <th>服务类型</th>
+                    <th>创建人</th>
+                    <th>创建时间</th>
+                    <th>处理</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>睿智数码</td>
+                    <td>询问收音机订单运费承担方式</td>
+                    <td>咨询</td>
+                    <td>张三</td>
+                    <td>2011年5月2日</td>
+                    <td><input type="image" src="../images/bt_deal.gif" onclick="showDispose()" /></td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="pageDiv"></div>
+    </div>
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script src="../lib/layer/layer.js"></script>
+    <script src="../js/jquery.qxqpaging.js"></script>
+    <script>
+        $(function () {
+            checkIsLogin();
+            loadServiceDisposeData();
+        });
+
+        function loadServiceDisposeData(nowPageIndex) {
+            $("#pageDiv").qxqpaging({
+                url: "../services/CustomerService.asmx/LoadServiceDisposePaging",
+                pageIndex: nowPageIndex || 1,
+                pageSize: 5,
+                success: function (data) {
+                    if (data == null) {
+                        location.href = getUrlHeader() + "404.html";
+                        return;
+                    }
+                    // 保存当前页码，操作完成后继续跳转到此页
+                    var nowPageIndex = this.pageIndex;
+                    // 查询，显示结果
+                    // 删除原有数据
+                    $("#dataDiv > .dataTable tbody tr").remove();
+                    $.each(data, function (index, item) {
+                        //创建行
+                        var tr = $("<tr/>").appendTo("#dataDiv > .dataTable tbody").data("CSID", item.CSID);
+                        //创建单元格
+                        $('<td/>').appendTo(tr).text(item.CusName || "");
+                        $('<td/>').appendTo(tr).text(item.CSTitle || "").css("text-align", "left");
+                        $('<td/>').appendTo(tr).text(item.STName || "");
+                        $('<td/>').appendTo(tr).text(item.CSCreateMan || "");
+                        $('<td/>').appendTo(tr).text(convertToDate(item.CSCreateDate));
+                        var td6 = $('<td/>').appendTo(tr);
+                        // 文本框
+                        var caozuo = $('<input type="image" src="../images/bt_deal.gif" />').appendTo(td6);
+
+                        caozuo.click(function () {
+                            parent.layer.open({
+                                type: 2,
+                                area: ['650px', '500px'],
+                                scrollbar: false,
+                                cache: false,
+                                title: ['服务处理', 'font-weight:700'],
+                                btn: ["确定", "取消"],
+                                content: [getUrlHeader() + 'CustomerService/ServiceDisposeDialog.htm?id=' + item.CSID, 'auto'],
+                                yes: function (index, layero) {
+                                    var body = parent.layer.getChildFrame('body', index);
+                                    var data = {
+                                        csDeal: body.find("#txt_csdeal").val(),
+                                        csID: item.CSID
+                                    };
+                                    if ($.trim(data.csDeal).length == 0) {
+                                        parent.layer.msg("请填写处理措施！", { time: 1000 });
+                                        body.find("#txt_csdeal").focus();
+                                        return;
+                                    }
+                                    $.ajax({
+                                        type: "post",
+                                        url: "../services/CustomerService.asmx/SaveCSDeal",
+                                        data: JSON.stringify(data),
+                                        contentType: "application/json",
+                                        dataType: "json",
+                                        success: function (r) {
+                                            if (r.d > 0) {
+                                                parent.layer.msg("操作成功！", { time: 1000 });
+                                                parent.layer.close(index);
+                                                loadServiceDisposeData(nowPageIndex);
+                                            } else {
+                                                parent.layer.msg("服务器繁忙，请稍后再试！", { time: 1000 });
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        });
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

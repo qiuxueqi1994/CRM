@@ -1,0 +1,89 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/style2.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+    <table class="tableEdit" style="width:600px;">
+        <thead>
+            <tr>
+                <td colspan="4">服务信息</td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th>客户编号：</th>
+                <td>
+                </td>
+                <th>服务类型：</th>
+                <td width="20%"></td>
+            </tr>
+            <tr>
+                <th>创建时间：</th>
+                <td>
+                </td>
+                <th>创建人：</th>
+                <td>
+                </td>
+            </tr>
+            <tr>
+                <th>服务概要：</th>
+                <td colspan="3">
+                </td>
+            </tr>
+            <tr>
+                <th>详细信息：</th>
+                <td colspan="3">
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <table class="tableEdit" style="width:600px;">
+        <thead>
+            <tr>
+                <td colspan="4">服务处理</td>
+            </tr>
+        </thead>
+        <tr>
+            <th>服务处理：</th>
+            <td colspan="3">
+                <textarea placeholder="请填写处理措施" id="txt_csdeal"></textarea>
+            </td>
+        </tr>
+    </table>
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script>
+        $(function () {
+            checkIsLogin();
+            var CSID = getQueryString("id");
+            if (CSID == null) return;
+            loadData(CSID);
+        });
+
+        function loadData(CSID) {
+            $.ajax({
+                type: "post",
+                url: "../services/CustomerService.asmx/LoadServiceByID",
+                data: JSON.stringify({ "csID": CSID }),
+                contentType: "application/json",
+                dataType: "json",
+                cache: false,
+                success: function (r) {
+                    if (r.d) {
+                        var tbs = $("body .tableEdit:first tbody td").text("");
+                        $(tbs[0]).text(r.d.CusID);
+                        $(tbs[1]).text(r.d.STName);
+                        $(tbs[2]).text(convertToDate(r.d.CSCreateDate));
+                        $(tbs[3]).text(r.d.CSCreateMan);
+                        $(tbs[4]).text(r.d.CSTitle);
+                        $(tbs[5]).text(r.d.CSDesc);
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

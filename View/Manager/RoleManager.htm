@@ -1,0 +1,194 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/Style1.css" rel="stylesheet" type="text/css" />
+    <link href="../css/qxqpaging.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="desDiv">
+        <span>角色管理</span><br />
+        管理系统中所有的角色
+    </div>
+    <div id="dataDiv">
+        <div id="headDiv">
+            <img src="../images/22.gif" />&nbsp;&nbsp;<a href="javascript:void(0);">新建角色</a>
+        </div>
+        <table class="dataTable">
+            <thead>
+                <tr>
+                    <th>角色编号</th>
+                    <th>角色名</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>数据</td>
+                    <td>数据<input placeholder="" /> </td>
+                    <td><img title="修改" src="../images/edt.gif" onclick="showEdit()" />&nbsp;&nbsp;<img title="删除" src="../images/del.gif" /></td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="pageDiv"></div>
+    </div>
+
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../lib/layer/layer.js"></script>
+    <script src="../js/jquery.qxqpaging.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script>
+        $(function () {
+            checkIsLogin();
+            loadRoles();
+
+            // 添加
+            $("#headDiv a").click(function () {
+                parent.layer.open({
+                    type: 1,
+                    area: ['600px', '200px'],
+                    scrollbar: false,
+                    cache: false,
+                    title: ['添加角色', 'font-weight:700'],
+                    btn: ["确定添加", "取消"],
+                    content: '<link href="../CSS/style2.css" rel="stylesheet" type="text/css" /><table class="tableEdit"><tr><th style="height:100px;">角色名：</th><td colspan="3"><input id="txt_RoleName" type="text" style="width:300px;height:30px;" placeholder="请填写角色名"/></td></tr></table>',
+                    yes: function (index, layero) {
+                        var data = {
+                            RoleName: $(layero).find("#txt_RoleName").val()
+                        };
+
+                        if ($.trim(data.RoleName).length == 0) {
+                            $(layero).find("#txt_RoleName").val("").focus();
+                            return;
+                        }
+
+                        $.ajax({
+                            type: "post",
+                            url: "../services/Manager.asmx/AddRole",
+                            data: JSON.stringify({ r: data }),
+                            contentType: "application/json",
+                            dataType: "json",
+                            cache: false,
+                            success: function (r) {
+                                if (r.d > 0) {
+                                    parent.layer.msg("添加成功!", { time: 1000 });
+                                    parent.layer.close(index);
+                                    loadRoles();
+                                } else {
+                                    parent.layer.msg("服务器繁忙，请稍后再试!", { time: 1000 });
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+        });
+
+        function loadRoles(nowPageIndex) {
+            $("#pageDiv").qxqpaging({
+                url: "../services/Manager.asmx/LoadRolePaging",
+                pageIndex: nowPageIndex || 1,
+                pageSize: 5,
+                success: function (data) {
+                    if (data == null) {
+                        location.href = getUrlHeader() + "404.html";
+                        return;
+                    }
+                    // 当最后一页的最后一条数据被删除时，跳转到前一页
+                    if (data.length == 0 && this.pageIndex > 1) {
+                        loadRoles(this.pageIndex - 1);
+                        return;
+                    }
+                    // 保存当前页码，操作完成后继续跳转到此页
+                    var nowPageIndex = this.pageIndex;
+                    // 显示数据
+                    $("#dataDiv .dataTable tbody").empty();
+                    $.each(data, function (i, item) {
+                        var tr = $("<tr/>").appendTo("#dataDiv .dataTable tbody");
+                        $("<td/>").appendTo(tr).text(item.ID);
+                        $("<td/>").appendTo(tr).text(item.RoleName);
+                        var caozuo = $("<td/>").appendTo(tr);
+                        // 修改
+                        $('<img title="修改" src="../images/edt.gif" />').appendTo(caozuo)
+                            .click(function () {
+                                parent.layer.open({
+                                    type: 1,
+                                    area: ['600px', '200px'],
+                                    scrollbar: false,
+                                    cache: false,
+                                    title: ['修改角色', 'font-weight:700'],
+                                    btn: ["确定修改", "取消"],
+                                    content: '<link href="../CSS/style2.css" rel="stylesheet" type="text/css" /><table class="tableEdit"><tr><th style="height:100px;">角色名：</th><td colspan="3"><input id="txt_RoleName" type="text" style="width:300px;height:30px;" placeholder="请填写角色名"/></td></tr></table>',
+                                    success: function (layero, index) {
+                                        $(layero).find("#txt_RoleName").val(item.RoleName);
+                                    },
+                                    yes: function (index, layero) {
+                                        var data = {
+                                            ID: item.ID,
+                                            RoleName: $(layero).find("#txt_RoleName").val()
+                                        };
+
+                                        if ($.trim(data.RoleName).length == 0) {
+                                            $(layero).find("#txt_RoleName").val("").focus();
+                                            return;
+                                        }
+
+                                        $.ajax({
+                                            type: "post",
+                                            url: "../services/Manager.asmx/UpdateRole",
+                                            data: JSON.stringify({ r: data }),
+                                            contentType: "application/json",
+                                            dataType: "json",
+                                            cache: false,
+                                            success: function (r) {
+                                                if (r.d > 0) {
+                                                    parent.layer.msg("修改成功!", { time: 1000 });
+                                                    parent.layer.close(index);
+                                                    loadRoles(nowPageIndex);
+                                                } else {
+                                                    parent.layer.msg("服务器繁忙，请稍后再试!", { time: 1000 });
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            });
+                        $("<span/>").appendTo(caozuo).html("&nbsp;&nbsp;");
+                        // 删除
+                        $('<img title="删除" src="../images/del.gif" />').appendTo(caozuo)
+                            .click(function () {
+                                parent.layer.confirm('确定删除角色' + item.RoleName + '吗？', {
+                                    icon: 3,
+                                    btnAlign: 'c',
+                                    shadeClose: true,
+                                    yes: function (index) {
+                                        $.ajax({
+                                            type: "post",
+                                            url: "../services/Manager.asmx/RemoveRole",
+                                            data: JSON.stringify({ rid: item.ID }),
+                                            contentType: "application/json",
+                                            dataType: "json",
+                                            cache: false,
+                                            success: function (r) {
+                                                if (r.d == "true") {    // 删除成功
+                                                    layer.msg('删除成功！', { time: 1000 });
+                                                    loadRoles(nowPageIndex);
+                                                    parent.layer.close(index);
+                                                } else if (r.d == "false") {
+                                                    layer.msg('服务器繁忙，请稍后重试！', { time: 1000 });
+                                                } else {
+                                                    layer.msg('该角色下有' + r.d + '个用户,无法删除！', { time: 1000 });
+                                                    parent.layer.close(index);
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            });
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

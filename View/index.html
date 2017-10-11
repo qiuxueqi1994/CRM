@@ -1,0 +1,229 @@
+﻿<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="renderer" content="webkit|ie-comp|ie-stand">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <link rel="stylesheet" type="text/css" href="css/H-ui.reset.css" />
+    <link rel="stylesheet" type="text/css" href="css/H-ui.css" />
+    <link rel="stylesheet" type="text/css" href="css/H-ui.admin.css" />
+    <link rel="stylesheet" type="text/css" href="skin/blue/skin.css" />
+    <link rel="stylesheet" type="text/css" href="fonts/iconfont.css" />
+    <link rel="stylesheet" type="text/css" href="css/my-style.css" />
+    <link href="css/qxqpaging.css" rel="stylesheet" />
+
+    <title>CRM客户关系管理系统</title>
+    <style type="text/css">
+        body {
+            margin: 0px;
+        }
+
+        .STYLE1 {
+            font-size: 12px;
+            color: #FFFFFF;
+        }
+
+        .STYLE2 {
+            font-size: 9px;
+        }
+
+        .STYLE3 {
+            color: #033d61;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <!--头部-->
+    <header class="navbar-wrapper">
+        <div class="navbar navbar-fixed-top">
+            <div style="display:inline-block; background: url('images/crm_logo.png') no-repeat 0px 10px; width:240px; height:45px;margin-top:20px; padding-left:100px; opacity: 0.88;color:#fff;margin-left:40px;">
+                <i style="font-size:20px;">CRM客户关系管理系统</i>
+                <i style="display:block; font-size:12px;transform:scale(0.8) translate(-30px, -4px);">COMPRNY INFORMATION SYSTEM</i>
+            </div>
+            <iframe style="position:absolute;top:20px;right:200px;" width="420" scrolling="no" height="60" frameborder="0" allowtransparency="true" src="http://i.tianqi.com/index.php?c=code&id=12&color=%23&icon=4&py=yueluqu&num=3&site=14"></iframe>
+            <nav class="nav navbar-nav navbar-userbar">
+                <div class="dropDown dropDown_hover">
+                    <a id="usernamelink" class="dropDown_A c-white" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" style="height:44px; line-height:44px;  width:140px; text-align:center;">&nbsp;</a>
+                    <ul class="dropDown-menu menu radius box-shadow">
+                        <li><a _href="change-password.html" data-title="修改密码" onclick="Hui_admin_tab(this)"><i class="iconfont icon-xiugaimima mr-20"></i>修改密码</a></li>
+                        <li><a href="javascript:void(0)" id="logoutlink"><i class="iconfont icon-tuichu mr-20"></i>退出登录</a></li>
+                    </ul>
+                </div>
+
+            </nav>
+            <ul class="hide" id="close-pagebox">
+                <li>关闭当前标签页</li>
+                <li>关闭其他标签页</li>
+                <li>关闭所有标签页</li>
+            </ul>
+        </div>
+    </header>
+    <!--左侧导航-->
+    <aside class="Hui-aside">
+        <input id="divScrollValue" type="hidden" value="" />
+        <div class="menu_dropdown bk_2" id="menu-container"></div>
+    </aside>
+    <!--左侧导航开关-->
+    <div class="dislpayArrow hidden-xs">
+        <a class="pngfix" href="javascript:void(0);" onclick="displaynavbar(this)"></a>
+    </div>
+    <!--右侧内容-->
+    <section class="Hui-article-box">
+        <div id="Hui-tabNav" class="Hui-tabNav hidden-xs" style="padding-right:146px;">
+            <div class="Hui-tabNav-wp">
+                <ul id="min_title_list" class="acrossTab cl">
+                    <li class="active">
+                        <span title="首页" data-href="welcome.htm">首页</span><em></em>
+                    </li>
+                </ul>
+            </div>
+            <div class="Hui-tabNav-more btn-group" style="width:146px;">
+                <a id="js-tabNav-prev" class="btn radius btn-default size-S" href="javascript:;">
+                    <i class="iconfont icon-iconfontxiangyou"></i>
+                </a>
+
+                <a class="btn radius btn-default size-S" id="close-page">
+                    关闭操作<img src="images/xiala.png" style="width:8px; margin-left:4px;">
+                </a>
+
+
+                <a id="js-tabNav-next" class="btn radius btn-default size-S" href="javascript:;">
+                    <i class="iconfont icon-xiangyou"></i>
+                </a>
+            </div>
+        </div>
+        <div id="iframe_box" class="Hui-article">
+            <div class="show_iframe">
+                <div style="display:none" class="loading"></div>
+                <iframe scrolling="yes" frameborder="0" src="welcome.htm"></iframe>
+            </div>
+        </div>
+    </section>
+    <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" src="js/mymethod.js"></script>
+    <script type="text/javascript" src="js/H-ui.js"></script>
+    <script type="text/javascript" src="js/H-ui.admin.js"></script>
+    <script src="lib/layer/layer.js"></script>
+    <script src="js/jquery.qxqpaging.js"></script>
+    <script>
+        $(function () {
+            checkIsLogin();
+
+            // 加载菜单
+            $.ajax({
+                type: "post",
+                url: "Menu.asmx/LoadMenus",
+                data: JSON.stringify({}),
+                dataType: "json",
+                //async:false,
+                contentType: "application/json",
+                success: function (r) {
+                    var container = $("#menu-container").empty();
+                    $.each(r.d, function (i, root) {
+                        //没有此主菜单的权限，不显示
+                        if (!root.Checked) return;
+                        var dl = $("<dl/>").appendTo(container);
+                        var dt = $("<dt/>").appendTo(dl);
+                        $('<i class=" iconfont" style="margin-right:10px;"/>').appendTo(dt).addClass(root.Icon);
+                        dt.append(root.MenuName);
+                        $('<i class="iconfont icon-xiangxia menu_dropdown-arrow"/>').appendTo(dt);
+                        // 显示二级菜单
+                        var ul = $("<ul/>").appendTo($("<dd/>").appendTo(dl));
+                        $.each(root.SubMenus, function (j, menu) {
+                            //没有此子菜单的权限，不显示
+                            if (!menu.Checked) return;
+                            //添加子菜单容器
+                            var li = $("<li/>").appendTo(ul);
+                            $('<a href="javascript:void(0);"/>').appendTo(li).text(menu.MenuName).attr({ "_href": menu.Url, "data-title": menu.MenuName });
+                        });
+                    });
+                    $.Huifold(".menu_dropdown dl dt",".menu_dropdown dl dd","fast",1,"click");
+                }
+            });
+
+            $("#close-page").click(function () {
+                $("#close-pagebox").toggleClass('hide');
+            });
+
+            // 关闭当前标签页
+            $("#close-pagebox li:eq(0)").click(function () {
+                var aCloseIndex = $("#min_title_list li.active").index();
+                var iframe_box = $("#iframe_box");
+                if (aCloseIndex > 0) {
+                    $("#min_title_list li.active").remove();
+                    $('#iframe_box').find('.show_iframe').eq(aCloseIndex).remove();
+                    num == 0 ? num = 0 : num--;
+                    $("#min_title_list li").removeClass("active").eq(aCloseIndex - 1).addClass("active");
+                    iframe_box.find(".show_iframe").hide().eq(aCloseIndex - 1).show();
+                    tabNavallwidth();
+                    if ($("#close-page").parent().css("display") === "none") {
+                        $("#close-pagebox").addClass('hide');
+                    }
+                } else {
+                    return false;
+                }
+            });
+
+            // 关闭其他标签页
+            $("#close-pagebox li:eq(1)").click(function () {
+                var lis = $("#min_title_list li");
+                var aShowIndex = $("#min_title_list li.active").index();
+                var aCloseIndex = 1;
+                for (var i = 1; i < lis.length; i++) {
+                    if (aShowIndex == i) {
+                        if (aShowIndex < lis.length - 1) aCloseIndex = 2;
+                        continue;
+                    }
+                    var iframe_box = $("#iframe_box");
+                    if (aCloseIndex > 0) {
+                        $(lis[i]).remove();
+                        $('#iframe_box').find('.show_iframe').eq(aCloseIndex).remove();
+                        num == 0 ? num = 0 : num--;
+                        $("#min_title_list li").removeClass("active").eq(aCloseIndex - 1).addClass("active");
+                        iframe_box.find(".show_iframe").hide().eq(aCloseIndex - 1).show();
+                        tabNavallwidth();
+                    } else {
+                        return false;
+                    }
+                }
+                $("#close-pagebox").addClass('hide');
+            });
+
+            // 关闭全部标签页
+            $("#close-pagebox li:eq(2)").click(function () {
+                var lis = $("#min_title_list li");
+                for (var i = 1; i < lis.length; i++) {
+                    var aCloseIndex = 1;
+                    var iframe_box = $("#iframe_box");
+                    if (aCloseIndex > 0) {
+                        $(lis[i]).remove();
+                        $('#iframe_box').find('.show_iframe').eq(aCloseIndex).remove();
+                        num == 0 ? num = 0 : num--;
+                        $("#min_title_list li").removeClass("active").eq(aCloseIndex - 1).addClass("active");
+                        iframe_box.find(".show_iframe").hide().eq(aCloseIndex - 1).show();
+                        tabNavallwidth();
+                    } else {
+                        return false;
+                    }
+                }
+                $("#close-pagebox").addClass('hide');
+            });
+
+            // 退出
+            $("#logoutlink").click(function () {
+                $.ajax({
+                    type: "post",
+                    url: "services/Login.asmx/Logout",
+                    success: function () {
+                        window.location.href = "login.html";
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

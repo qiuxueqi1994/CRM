@@ -1,0 +1,138 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/style2.css" rel="stylesheet" type="text/css" />
+    <style>
+        #td_csSatisfy span {
+            cursor: pointer;
+        }
+
+            #td_csSatisfy span:before {
+                content: '☆';
+            }
+
+            #td_csSatisfy span.over:before{
+                color: #5A98DE;
+            }
+
+            #td_csSatisfy span.selected:before {
+                content: '★';
+                color: #5A98DE;
+            }
+    </style>
+</head>
+<body>
+    <table class="tableEdit" style="width:600px;">
+        <thead>
+            <tr>
+                <td colspan="4">服务信息</td>
+            </tr>
+        </thead>
+        <tr>
+            <th>客户编号：</th>
+            <td></td>
+            <th>服务类型：</th>
+            <td width="20%"></td>
+        </tr>
+        <tr>
+            <th>创建时间：</th>
+            <td></td>
+            <th>创建人：</th>
+            <td></td>
+        </tr>
+        <tr>
+            <th>服务概要：</th>
+            <td colspan="3"></td>
+        </tr>
+        <tr>
+            <th>详细信息：</th>
+            <td colspan="3"></td>
+        </tr>
+    </table>
+    <table class="tableEdit" style="width:600px;">
+        <thead>
+            <tr>
+                <td colspan="4">服务处理</td>
+            </tr>
+        </thead>
+        <tr>
+            <th>处理时间：</th>
+            <td></td>
+            <th>处理人：</th>
+            <td width="20%"></td>
+        </tr>
+        <tr>
+            <th>服务处理：</th>
+            <td colspan="3"></td>
+        </tr>
+    </table>
+    <table class="tableEdit" style="width:600px;">
+        <thead>
+            <tr>
+                <td colspan="4">服务反馈</td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th>处理结果：</th>
+                <td>
+                    <input type="text" id="txt_csResult" />
+                </td>
+                <th>满意度：</th>
+                <td width="20%" id="td_csSatisfy" title="单击选择满意度">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script>
+        $(function () {
+            checkIsLogin();
+            var CSID = getQueryString("id");
+            if (CSID == null) return;
+            //  满意度选择
+            $("#td_csSatisfy span").mouseover(function () {
+                $(this).nextAll().addBack().removeClass("over");
+                $(this).prevAll().addBack().addClass("over");
+            });
+            $("#td_csSatisfy span").mouseout(function () {
+                $("#td_csSatisfy span").removeClass("over");
+            });
+            $("#td_csSatisfy span").click(function () {
+                $(this).nextAll().addBack().removeClass("selected");
+                $(this).prevAll().addBack().addClass("selected");
+            });
+            loadData(CSID);
+        });
+
+        function loadData(CSID) {
+            $("#td_csSatisfy span:eq(0)").addClass("selected");
+            $.ajax({
+                type: "post",
+                url: "../services/CustomerService.asmx/LoadServiceByID",
+                data: JSON.stringify({ "csID": CSID }),
+                contentType: "application/json",
+                dataType: "json",
+                cache: false,
+                success: function (r) {
+                    if (r.d) {
+                        var tbs = $("body .tableEdit:not(:last) tbody td").text("");
+                        $(tbs[0]).text(r.d.CusID);
+                        $(tbs[1]).text(r.d.STName);
+                        $(tbs[2]).text(convertToDate(r.d.CSCreateDate));
+                        $(tbs[3]).text(r.d.CSCreateMan);
+                        $(tbs[4]).text(r.d.CSTitle);
+                        $(tbs[5]).text(r.d.CSDesc);
+                        $(tbs[6]).text(convertToDate(r.d.CSDealDate));
+                        $(tbs[7]).text(r.d.CSDueMan);
+                        $(tbs[8]).text(r.d.CSDeal);
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

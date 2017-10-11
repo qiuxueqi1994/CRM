@@ -1,0 +1,70 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/style2.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <table class="tableEdit">
+        <tbody>
+            <tr>
+                <th>登陆名：</th>
+                <td colspan="3"><input title="登陆名" type="text" style="width:300px" /></td>
+            </tr>
+            <tr>
+                <th>密码：</th>
+                <td colspan="3"><input title="密码" type="password" style="width:300px" /></td>
+            </tr>
+            <tr>
+                <th>确认密码：</th>
+                <td colspan="3"><input title="确认密码" type="password" style="width:300px" /></td>
+            </tr>
+            <tr>
+                <th>真实姓名：</th>
+                <td colspan="3"><input title="真实姓名" type="text" style="width:300px" /></td>
+            </tr>
+            <tr>
+                <th>姓名简称：</th>
+                <td colspan="3"><input title="姓名简称" type="text" style="width:300px" /></td>
+            </tr>
+            <tr>
+                <th>所属角色：</th>
+                <td colspan="3">
+                    <select id="sel_roletype"></select>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script>
+        $(function () {
+            loadRoleType();
+        });
+
+        // 加载角色列表
+        function loadRoleType() {
+            $.ajax({
+                type: "post",
+                url: "../services/Manager.asmx/LoadRole",
+                data: "{}",
+                contentType: "application/json",
+                dataType: "json",
+                cache: false,
+                success: function (r) {
+                    var RoleID = getQueryString('id');
+                    if (r.d) {
+                        $("#sel_roletype").empty();
+                        $.each(r.d, function (i, item) {
+                            var op = $("<option/>").appendTo("#sel_roletype").val(item.ID).text(item.RoleName);
+                            if (RoleID == item.ID)
+                                op.prop("selected", true);
+                        });
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

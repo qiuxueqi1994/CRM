@@ -1,0 +1,317 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/Style4.css" rel="stylesheet" type="text/css" />
+    <link href="../CSS/style2.css" rel="stylesheet" type="text/css" />
+    <link href="../css/qxqpaging.css" rel="stylesheet" />
+    <style>
+        #dataLeft .dataTable tr {
+            cursor: default;
+        }
+
+            #dataLeft .dataTable tr.selected {
+                background-color: rgba(188, 237, 255, 0.60);
+            }
+
+        input[type=button] {
+            background-color: #2e8ded;
+            color: #fff;
+            height: 28px;
+            line-height: 28px;
+            margin: 0 6px;
+            padding: 0 15px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 400;
+            cursor: pointer;
+        }
+
+            input[type=button]:hover {
+                opacity: 0.9;
+            }
+    </style>
+</head>
+<body>
+    <div id="desDiv" style="width:1100px;">
+        <span>客户流失管理</span><br />
+        显示即将流失的客户信息，并制定挽救措施
+    </div>
+    <div style="width: 1100px">
+        <div id="dataLeft" style="width:60%;">
+            <table class="dataTable">
+                <thead>
+                    <tr>
+                        <th>客户编号</th>
+                        <th>客户名称</th>
+                        <th>上次下单时间</th>
+                        <th>报警时间</th>
+                        <th>流失时间</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div id="pageDiv"></div>
+        </div>
+        <div id="dataRight" style="width:39%;">
+            <div class="menuDiv">
+                <div style="background-image:url(../images/bg.gif)">
+                    暂缓流失措施
+                </div>
+            </div>
+            <div class="contentDiv">
+                <div>
+                    <table id="MeasuresAdd" class="tableEdit">
+                        <thead>
+                            <tr>
+                                <td colspan="2">
+                                    添加暂缓措施
+                                </td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th>
+                                    暂缓措施细节：
+                                </th>
+                                <td>
+                                    <textarea style="width: 90%" id="txt_MeDesc"></textarea>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4">
+                                    <input type="button" value="添加" onclick="addMeasures();" />&nbsp;&nbsp;
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <table id="MeasuresShow" class="dataTable">
+                        <thead>
+                            <tr>
+                                <th width="35%">时间</th>
+                                <th>措施</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../lib/layer/layer.js"></script>
+    <script src="../js/jquery.qxqpaging.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script>
+        var LostsPageIndex;
+        $(function () {
+            checkIsLogin();
+            loadLosts();
+
+            //点击行显示暂缓措施界面
+            $("#dataLeft .dataTable").on("click", "tr:gt(0)", function () {
+                //添加选中样式
+                $("#dataLeft .selected").removeClass("selected");
+                $(this).addClass("selected");
+
+                //显示暂缓措施面板
+                $(".contentDiv div:first").show();
+
+                //判断状态:状态3(确认流失)的客户，不需要再添加暂缓措施
+                if ($(this).data("state") == 3) {
+                    $("#MeasuresAdd").hide();
+                } else {
+                    $("#MeasuresAdd").show();
+                }
+
+                if ($(this).data("state") > 1) {
+                    LoadMeasures($(this).data("CLID"));
+                } else {
+                    $("#MeasuresShow tbody").empty();
+                }
+            });
+        });
+
+        function loadLosts(nowPageIndex, selectclID) {
+            var txts = $('body > .tableEdit :text');
+            $("#pageDiv").qxqpaging({
+                url: "../services/Customer.asmx/LoadCustomlostsPaging",
+                pageIndex: nowPageIndex || 1,
+                pageSize: 5,
+                success: function (data) {
+                    if (data == null) {
+                        location.href = getUrlHeader() + "404.html";
+                        return;
+                    }
+                    // 保存当前页码，操作完成后继续跳转到此页
+                    var nowPageIndex = this.pageIndex;
+                    LostsPageIndex = this.pageIndex;
+                    // 移除之前的内容
+                    $("#dataLeft > .dataTable tbody").empty();
+                    $.each(data, function (index, item) {
+                        //添加行
+                        var tr = $("<tr/>").appendTo("#dataLeft > .dataTable tbody").data("state", item.CLState).data("CLID", item.CLID);
+                        if (selectclID == item.CLID) tr.addClass("selected");
+                        //添加列
+                        $("<td/>").appendTo(tr).text(item.CusID);
+                        $("<td/>").appendTo(tr).text(item.CusName);
+                        $("<td/>").appendTo(tr).text(convertToDate(item.CLOrderDate, true));
+                        $("<td/>").appendTo(tr).text(convertToDate(item.CLDate, true));
+                        $("<td/>").appendTo(tr).text(convertToDate(item.CLEnterDate, true));
+                        var state = item.CLState;
+                        $("<td/>").appendTo(tr).text(state == 1 ? "流失报警" : (state == 2 ? "暂缓流失" : "确认流失"));
+                        var td5 = $("<td/>").appendTo(tr).html('');
+                        if (state < 3) {
+                            // 确认流失操作
+                            $('<img src="../images/bt_confirm.gif" title="确认流失" />').appendTo(td5)
+                                .click(function () {
+                                    parent.layer.open({
+                                        type: 1,
+                                        area: ['500px', '210px'],
+                                        cache: false,
+                                        title: ['客户流失确认', 'font-weight:700'],
+                                        btn: ["确认流失", "取消"],
+                                        content: '<link href="../CSS/style2.css" rel="stylesheet" type="text/css" /><table class="tableEdit" style="width:96%;"><tr><th>流失原因：</th><td><textarea style="width:90%" id="txt_CLReason"  placeholder="请填写流失原因"></textarea></td></tr></table>',
+                                        yes: function (index, layero) {
+                                            var data = {
+                                                clReason: layero.find("#txt_CLReason").val(),
+                                                clID: item.CLID
+                                            };
+                                            if ($.trim(data.clReason).length == 0) {
+                                                layero.find("#txt_CLReason").focus();
+                                                return;
+                                            }
+                                            // 执行确认流失
+                                            console.log();
+                                            $.ajax({
+                                                type: "post",
+                                                url: "../services/Customer.asmx/SaveCLReason",
+                                                data: JSON.stringify(data),
+                                                contentType: "application/json",
+                                                dataType: "json",
+                                                success: function (r) {
+                                                    if (r.d > 0) {
+                                                        loadLosts(nowPageIndex, item.CLID);
+                                                        parent.layer.close(index);
+                                                        $("#MeasuresAdd").hide();
+                                                        layer.msg("操作成功！", { time: 1000 });
+                                                    } else {
+                                                        layer.msg("服务器繁忙，请稍后再试！");
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                });
+                        }
+                        else {
+                            // 查看流失原因
+                            $('<img src="../images/bt_orders.gif" title="查看流失原因" />').appendTo(td5)
+                                .click(function () {
+                                    var $this = $(this);
+                                    parent.layer.open({
+                                        type: 1,
+                                        area: ['500px', '200px'],
+                                        cache: false,
+                                        title: ['该客户已流失(查看流失原因)', 'font-weight:700'],
+                                        shadeClose: true,
+                                        content: '<link href="../CSS/style2.css" rel="stylesheet" type="text/css" /><table class="tableEdit" style="width:96%;"><tr><th>流失原因：</th><td><div id="div_CLReason" style="width:90%;border:solid 1px #666;width:300px;height:100px;" ></div></td></tr></table>',
+                                        success: function (layero, index) {
+                                            $.ajax({
+                                                type: "post",
+                                                url: "../services/Customer.asmx/SelectClReason",
+                                                data: JSON.stringify({ clID: $this.parents("tr").data("CLID") }),
+                                                contentType: "application/json",
+                                                dataType: "json",
+                                                success: function (r) {
+                                                    if (r.d) {
+                                                        layero.find("#div_CLReason").text(r.d);
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                });
+                        }
+                    });
+                }
+            });
+        }
+
+        // 添加暂缓措施前判断
+        function addMeasures() {
+            var data = {
+                clID: $("#dataLeft .dataTable tr.selected").data("CLID"),
+                meDesc: $("#txt_MeDesc").val(),
+                state: $("#dataLeft .dataTable tr.selected").data("state")
+            };
+
+            if ($.trim(data.meDesc).length == 0) {
+                layer.tips("请填写暂缓措施细节", $("#txt_MeDesc"), { tips: 2 });
+                $("#txt_MeDesc").focus();
+                return;
+            }
+
+            if (data.state == 1)
+                parent.layer.confirm("添加暂缓措施后，状态将改为暂缓流失，确定操作？", {
+                    icon: 3,
+                    btnAlign: 'c',
+                    shadeClose: true,
+                    yes: function (index, layero) {
+                        addMeasuresGo(data);
+                        parent.layer.close(index);
+                    }
+                });
+            else
+                addMeasuresGo(data);
+        }
+
+        // 添加暂缓措施
+        function addMeasuresGo(data) {
+            $.ajax({
+                type: "post",
+                url: "../services/Customer.asmx/InsertMeasures",
+                data: JSON.stringify(data),
+                contentType: "application/json",
+                dataType: "json",
+                success: function (r) {
+                    if (r.d > 0) {
+                        if (data.state == 1) {
+                            loadLosts(LostsPageIndex, data.clID);
+                        }
+                        LoadMeasures(data.clID);
+                        $("#txt_MeDesc").val("");
+                    }
+                }
+            });
+        }
+
+        // 加载流失措施
+        function LoadMeasures(clID) {
+            $.ajax({
+                type: "post",
+                url: "../services/Customer.asmx/LoadMeasures",
+                data: JSON.stringify({ clID: clID }),
+                contentType: "application/json",
+                dataType: "json",
+                success: function (r) {
+                    if (r.d) {
+                        $("#MeasuresShow tbody").empty();
+                        $.each(r.d, function (i, item) {
+                            var tr = $("<tr/>").appendTo("#MeasuresShow tbody");
+                            $("<td/>").appendTo(tr).text(convertToDate(item.MeDate, true));
+                            $("<td/>").appendTo(tr).text(item.MeDesc).css("text-align", "left");
+                        });
+                    }
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>

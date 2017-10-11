@@ -1,0 +1,70 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/style2.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <table class="tableEdit">
+        <tbody>
+            <tr>
+                <th>姓名：</th>
+                <td>
+                    <input title="姓名" type="text" />
+                </td>
+                <th>性别：</th>
+                <td>
+                    <input type="radio" value="男" name="sex" id="sex1" checked="checked" /><label for="sex1">男</label>&nbsp;&nbsp;
+                    <input type="radio" value="女" name="sex" id="sex0" /><label for="sex0">女</label>
+                </td>
+            </tr>
+            <tr>
+                <th>职位：</th>
+                <td><input title="职位" type="text" /></td>
+                <th>固定电话：</th>
+                <td><input title="固定电话" type="text" /></td>
+            </tr>
+            <tr>
+                <th>手机号码：</th>
+                <td><input title="手机号码" type="text" /></td>
+                <th></th>
+                <td></td>
+            </tr>
+            <tr>
+                <th>备注：</th>
+                <td colspan="3"><textarea></textarea></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            checkIsLogin();
+            var cusID = getQueryString("id");
+            if (cusID == null) return;
+            $.ajax({
+                type: "post",
+                url: "../services/Customer.asmx/FindLinkMan",
+                data: JSON.stringify({ id: cusID }),
+                contentType: "application/json",
+                dataType: "json",
+                success: function (r) {
+                    if (r.d) {
+                        $("input[title=姓名]").val(r.d.LMName);
+                        if (r.d.LMSex === "男")
+                            $("input[type=radio][value=男]").attr("checked", "checked");
+                        else if (r.d.LMSex === "女")
+                            $("input[type=radio][value=女]").attr("checked", "checked");
+                        $("input[title=职位]").val(r.d.LMDuty);
+                        $("input[title=手机号码]").val(r.d.LMMobileNo);
+                        $("input[title=固定电话]").val(r.d.LMOfficeNo);
+                        $("textarea").val(r.d.LMMemo);
+                    }
+                }
+            });
+        })
+    </script>
+</body>
+</html>

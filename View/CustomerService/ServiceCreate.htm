@@ -1,0 +1,178 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link href="../CSS/style2.css" rel="stylesheet" type="text/css" />
+    <style>
+        input[type=button] {
+            background-color: #2e8ded;
+            color: #fff;
+            height: 28px;
+            line-height: 28px;
+            margin: 0 6px;
+            padding: 0 15px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 400;
+            cursor: pointer;
+        }
+
+            input[type=button]:hover {
+                opacity: 0.9;
+            }
+    </style>
+</head>
+<body>
+    <table class="tableEdit" style="width:600px;">
+        <thead>
+            <tr>
+                <td colspan="4">创建服务</td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th>客户编号：</th>
+                <td>
+                    <input id="CustomerId" type="text" readonly="readonly" placeholder="双击此处选择客户" />
+                </td>
+                <th>服务类型：</th>
+                <td>
+                    <select id="serviceType" style="width:100px"></select>
+                </td>
+            </tr>
+            <tr>
+                <th>服务概要：</th>
+                <td colspan="3">
+                    <input title="服务概要" type="text" />
+                </td>
+            </tr>
+            <tr>
+                <th>详细信息：</th>
+                <td colspan="3">
+                    <textarea></textarea>
+                </td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4" >
+                    <input type="button" value="确定" style="margin-left:45px;" />
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../lib/layer/layer.js"></script>
+    <script src="../js/mymethod.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            checkIsLogin();
+            // 双击弹框选择客户
+            $("#CustomerId").dblclick(function () {
+                parent.layer.open({
+                    type: 1,
+                    area: ['400px', '400px'],
+                    title: ['客户选择(选择双击确定)', 'font-weight:700'],
+                    shadeClose: true,
+                    content: '<link href="../CSS/style5.css" rel="stylesheet" type="text/css" /><table class="tableEdit"><thead><tr><th>客户编号</th><th>客户名称</th></tr></thead><tbody></tbody></table>',
+                    success: function (layero, index) {
+                        layero.find("div.layui-layer-content").css({ "overflow-y": "auto", "overflow-x": "hidden" });
+                        var tbody = layero.find(".tableEdit tbody");
+                        tbody.find("tr").remove();
+                        $.ajax({
+                            type: "post",
+                            url: "../services/CustomerService.asmx/Loadcustomers",
+                            data: JSON.stringify({}),
+                            contentType: "application/json",
+                            dataType: "json",
+                            success: function (r) {
+                                $.each(r.d, function (i, item) {
+                                    var tr = $("<tr/>").appendTo(tbody).css("cursor", "default");
+                                    $("<td/>").appendTo(tr).text(item.CusID).css("text-align", "center");
+                                    $("<td/>").appendTo(tr).text(item.CusName);
+                                    // 双击选择
+                                    tr.dblclick(function () {
+                                        $("#CustomerId").val(item.CusName).data("CusID", item.CusID);
+                                        parent.layer.close(index);
+                                    });
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+            // 加载下拉列表
+            LoadServiceType();
+            // 确定提交
+            $("input[type=button]").click(function () {
+                // 收集数据
+                var cusData = {
+                    CSID: 0,
+                    STID: $("#serviceType").val(),
+                    CusID: $("#CustomerId").data("CusID") || "",
+                    CSTitle: $("input[title=服务概要]").val(),
+                    CSDesc: $("textarea").val()
+                };
+                // 检查数据
+                if ($.trim(cusData.CusID).length == 0) {
+                    layer.tips("请先选择客户", $("#CustomerId"), { tips: 3 });
+                    return;
+                }
+                if ($.trim(cusData.CSTitle).length == 0) {
+                    layer.tips("请填写服务概要", $("input[title=服务概要]"), { tips: 3 });
+                    $("input[title=服务概要]").focus();
+                    return;
+                }
+                if ($.trim(cusData.CSDesc).length == 0) {
+                    layer.tips("请填写详细信息", $("textarea"), { tips: 2 });
+                    $("textarea").focus();
+                    return;
+                }
+                parent.layer.confirm('确定创建服务？', {
+                    icon: 3,
+                    btnAlign: 'c',
+                    shadeClose: true,
+                    yes: function (index) {
+                        $.ajax({
+                            type: "post",
+                            url: getUrlHeader() + "services/CustomerService.asmx/InsertService",
+                            data: JSON.stringify({ cusser: cusData }),
+                            contentType: "application/json",
+                            dataType: "json",
+                            success: function (r) {
+                                if (r.d > 0) {
+                                    parent.layer.msg("创建成功！", { time: 1000 });
+                                    $(":text").val(""); // 清空文本框
+                                    $("#CustomerId").removeData("CusID");// 清空绑定ID
+                                    $("textarea").val("");//清空文本域
+                                    $("#serviceType option:first").prop("selected", 'selected');//选择第一个下拉框
+                                }else {
+                                    parent.layer.msg("服务器繁忙，请稍后再试！", { time: 1000 });
+                                }
+                                parent.layer.close(index);
+                            }
+                        });
+                    }
+                });
+            });
+        });
+
+        function LoadServiceType() {
+            $.ajax({
+                type: "post",
+                url: "../services/CustomerService.asmx/LoadServiceType",
+                data: "{}",
+                contentType: "application/json",
+                dataType: "json",
+                success: function (r) {
+                    $("#serviceType option").remove();
+                    $.each(r.d, function (index, item) {
+                        $('<option />').appendTo($("#serviceType")).val(item.STID).text(item.STName);
+                    });
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>
